@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CalcNote</title>
+    <meta name="theme-color" content="#4a6572">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 5px;
+            touch-action: manipulation;
+        }
+        
+        .calculator {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 750px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4a6572 0%, #2c3e50 100%);
+            color: white;
+            padding: 6px 15px;
+            text-align: center;
+            flex-shrink: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+        }
+        
+        .mirror-total-container {
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        
+        .mirror-total {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 4px 0;
+            transform: rotate(180deg);
+            letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            min-height: 50px;
+            line-height: 1.2;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: #FFD700;
+            width: auto;
+            min-width: 200px;
+        }
+        
+        .datetime {
+            font-size: 9px;
+            opacity: 0.7;
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            text-align: right;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            background-color: #eee;
+            border-bottom: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 13px;
+            font-weight: bold;
+            touch-action: manipulation;
+        }
+        
+        .tab-button.active {
+            background-color: #4a6572;
+            color: white;
+        }
+        
+        .calculator-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .history-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            font-size: 13px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .history {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            padding: 10px 15px;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        
+        /* Baris history yang sedang aktif untuk input */
+        .active-input-line {
+            background-color: #e3f2fd !important;
+            border: 2px solid #2196f3 !important;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1565c0;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+        }
+        
+        .active-input-line::after {
+            content: "|";
+            animation: blink 1s infinite;
+            color: #2196f3;
+            font-weight: bold;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .history-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            min-height: 30px;
+            cursor: pointer;
+            touch-action: pan-y;
+        }
+        
+        .history-line .line-number {
+            font-weight: bold;
+            min-width: 25px;
+            color: #666;
+            font-size: 13px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        
+        .history-line .line-content {
+            flex-grow: 1;
+            text-align: left;
+            padding: 0 8px;
+            word-break: break-all;
+            font-size: 15px;
+        }
+        
+        .history-line .line-result {
+            font-weight: bold;
+            min-width: 80px;
+            text-align: right;
+            color: #2e7d32;
+            font-size: 15px;
+        }
+        
+        .history-line.editing {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 3px;
+        }
+        
+        .history-line:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .total-display {
+            background: linear-gradient(to right, #e8f5e8, #d4edda);
+            padding: 8px 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 2px solid #c3e6cb;
+            color: #155724;
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: center;
+        }
+        
+        .total-display .change-label {
+            font-size: 13px;
+            color: #0c5460;
+            text-align: left;
+        }
+        
+        .total-display .total-label {
+            font-size: 13px;
+            color: #0c5460;
+            text-align: center;
+        }
+        
+        .total-display .change-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: #155724;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+        
+        .total-display .total-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: #155724;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .keypad-container {
+            flex-shrink: 0;
+        }
+        
+        .keypad {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background-color: #ddd;
+            padding: 2px;
+        }
+        
+        .key-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+        }
+        
+        .key {
+            background-color: white;
+            border: none;
+            padding: 20px 0;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            min-height: 65px;
+            font-weight: bold;
+            border-radius: 3px;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .key:active {
+            background-color: #e0e0e0;
+            transform: scale(0.98);
+        }
+        
+        .key.number {
+            font-weight: bold;
+        }
+        
+        .key.operator {
+            color: #4a6572;
+            font-weight: bold;
+        }
+        
+        .key.enter {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        .key.enter:active {
+            background-color: #1976d2;
+        }
+        
+        .key.clear {
+            color: #e74c3c;
+        }
+        
+        .key.reset {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .key.reset:active {
+            background-color: #f57c00;
+        }
+        
+        .key.save {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .key.save:active {
+            background-color: #45a049;
+        }
+        
+        .key.decimal {
+            background-color: #e3f2fd;
+        }
+        
+        .key.minus {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+        
+        .key.minus:active {
+            background-color: #ffcdd2;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background-color: #ddd;
+            padding: 2px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+
+        /* Data Tab Styles */
+        .data-search {
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        
+        .data-container {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            min-height: 0;
+        }
+        
+        .stats-section {
+            padding: 10px 15px;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .stats-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        
+        .date-stat {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* Data item with better touch handling */
+        .data-item {
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background: white;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .data-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .data-item-total {
+            color: #2e7d32;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .data-item-content {
+            font-size: 11px;
+            color: #333;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+        
+        .data-item-lines {
+            font-size: 10px;
+            color: #999;
+            text-align: right;
+        }
+
+        /* Scrollbar styling */
+        .history::-webkit-scrollbar,
+        .data-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history::-webkit-scrollbar-track,
+        .data-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .history::-webkit-scrollbar-thumb,
+        .data-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .history::-webkit-scrollbar-thumb:hover,
+        .data-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .scroll-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .scroll-btn {
+            background: #4a6572;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            touch-action: manipulation;
+        }
+
+        .scroll-btn:active {
+            background: #3a5562;
+        }
+
+        /* Install prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4a6572;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            font-size: 12px;
+        }
+
+        .install-prompt button {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .calculator {
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            
+            .key {
+                padding: 18px 0;
+                min-height: 60px;
+                font-size: 18px;
+            }
+            
+            .mirror-total {
+                font-size: 28px;
+                padding: 8px 16px;
+                min-width: 180px;
+            }
+            
+            .datetime {
+                font-size: 8px;
+                top: 3px;
+                right: 8px;
+            }
+            
+            .total-display .total-value,
+            .total-display .change-value {
+                font-size: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .active-input-line {
+                font-size: 14px;
+                padding: 10px;
+                min-height: 45px;
+            }
+            
+            .history-line {
+                font-size: 14px;
+                padding: 6px;
+            }
+            
+            .history-line .line-number {
+                min-width: 20px;
+                font-size: 12px;
+                margin-right: 8px;
+            }
+            
+            .history-line .line-result {
+                min-width: 70px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="install-prompt" id="installPrompt">
+        Install CalcNote untuk experience yang lebih baik!
+        <button id="installButton">Install</button>
+    </div>
+
+    <div class="calculator">
+        <div class="header">
+            <div class="datetime" id="datetime">1/12/2023 18.45</div>
+            <div class="mirror-total-container">
+                <div class="mirror-total" id="mirrorTotal">Total: 0</div>
+            </div>
+        </div>
+        
+        <div class="tab-buttons">
+            <button class="tab-button active" data-tab="calculator">Kalkulator</button>
+            <button class="tab-button" data-tab="data">Data Tersimpan</button>
+            <button class="tab-button" data-tab="stats">Statistik</button>
+        </div>
+        
+        <div id="calculator-tab" class="calculator-content">
+            <div class="history-section">
+                <div class="history-header">
+                    <span>History</span>
+                    <div class="scroll-controls">
+                        <button class="scroll-btn" id="scrollUp">↑</button>
+                        <button class="scroll-btn" id="scrollDown">↓</button>
+                    </div>
+                </div>
+                <div class="history" id="history">
+                    <!-- Baris pertama untuk input akan dibuat oleh JavaScript -->
+                    <!-- Tidak ada baris input terpisah -->
+                </div>
+            </div>
+            
+            <div class="total-display">
+                <div class="change-section">
+                    <div class="change-label">Kembalian:</div>
+                    <div class="change-value" id="changeDisplay">0</div>
+                </div>
+                <div class="total-section">
+                    <div class="total-label">TOTAL:</div>
+                    <div class="total-value" id="totalDisplay">0</div>
+                </div>
+            </div>
+            
+            <div class="keypad-container">
+                <div class="keypad">
+                    <!-- Baris 1: 7, 8, 9, ×, Reset -->
+                    <div class="key-row">
+                        <button class="key number" data-number="7">7</button>
+                        <button class="key number" data-number="8">8</button>
+                        <button class="key number" data-number="9">9</button>
+                        <button class="key operator" data-action="multiply">×</button>
+                        <button class="key reset" data-action="reset">Reset</button>
+                    </div>
+                    
+                    <!-- Baris 2: 4, 5, 6, ÷, Hapus -->
+                    <div class="key-row">
+                        <button class="key number" data-number="4">4</button>
+                        <button class="key number" data-number="5">5</button>
+                        <button class="key number" data-number="6">6</button>
+                        <button class="key operator" data-action="divide">÷</button>
+                        <button class="key clear" data-action="backspace">Hapus</button>
+                    </div>
+                    
+                    <!-- Baris 3: 1, 2, 3, -, , -->
+                    <div class="key-row">
+                        <button class="key number" data-number="1">1</button>
+                        <button class="key number" data-number="2">2</button>
+                        <button class="key number" data-number="3">3</button>
+                        <button class="key minus" data-action="subtractMoney">-</button>
+                        <button class="key decimal" data-action="decimal">,</button>
+                    </div>
+                    
+                    <!-- Baris 4: 0, 00, 000, Enter, Save -->
+                    <div class="key-row">
+                        <button class="key number" data-number="0">0</button>
+                        <button class="key number" data-number="00">00</button>
+                        <button class="key number" data-number="000">000</button>
+                        <button class="key enter" data-action="enter">Enter</button>
+                        <button class="key save" data-action="save">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="data-tab" class="hidden calculator-content">
+            <div class="data-search">
+                <input type="text" class="search-input" id="searchInput" placeholder="Cari data tersimpan...">
+            </div>
+            <div class="data-container" id="saved-data">
+                <!-- Data tersimpan akan ditampilkan di sini -->
+            </div>
+            <div class="controls">
+                <button class="key clear" data-action="clear-all">Hapus Semua</button>
+                        <button class="key save" data-action="export">Export Data</button>
+            </div>
+        </div>
+        
+        <div id="stats-tab" class="hidden calculator-content">
+            <div class="stats-section">
+                <div class="stats-title">Statistik Total</div>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Statistik akan ditampilkan di sini -->
+                </div>
+            </div>
+            <div class="data-container" id="stats-data">
+                <!-- Detail statistik akan ditampilkan di sini -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PWA Installation
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installButton = document.getElementById('installButton');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installPrompt.style.display = 'flex';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installPrompt.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(() => {
+                console.log('Service Worker Registered');
+            });
+        }
+
+        // Kalkulator code
+        document.addEventListener('DOMContentLoaded', function() {
+            const historyElement = document.getElementById('history');
+            const savedDataElement = document.getElementById('saved-data');
+            const statsGrid = document.getElementById('statsGrid');
+            const statsDataElement = document.getElementById('stats-data');
+            const datetimeElement = document.getElementById('datetime');
+            const totalDisplay = document.getElementById('totalDisplay');
+            const changeDisplay = document.getElementById('changeDisplay');
+            const mirrorTotal = document.getElementById('mirrorTotal');
+            const searchInput = document.getElementById('searchInput');
+            const scrollUpBtn = document.getElementById('scrollUp');
+            const scrollDownBtn = document.getElementById('scrollDown');
+            
+            let historyLines = [];
+            let currentLine = '';
+            let currentLineElement = null; // Baris yang sedang aktif untuk input
+            let totalResult = 0;
+            let changeResult = 0;
+            let lastSubtractionAmount = 0;
+            let isMinusMode = false; // Mode khusus untuk tombol minus
+            let lineNumberCounter = 1; // Counter untuk nomor urut baris
+            
+            // Update datetime dengan format singkat
+            function updateDateTime() {
+                const now = new Date();
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const year = now.getFullYear();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                
+                datetimeElement.textContent = `${day}/${month}/${year} ${hours}.${minutes}`;
+            }
+            
+            setInterval(updateDateTime, 60000);
+            updateDateTime();
+            
+            function formatNumber(num) {
+                if (typeof num === 'number') {
+                    if (num % 1 !== 0) {
+                        return num.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    }
+                    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                }
+                return num;
+            }
+            
+            function calculateExpression(expression) {
+                try {
+                    let cleanExpression = expression
+                        .replace(/×/g, '*')
+                        .replace(/÷/g, '/')
+                        .replace(/,/g, '.')
+                        .replace(/[^\d+\-*/.()]/g, '');
+                    
+                    if (!cleanExpression) return null;
+                    
+                    const result = eval(cleanExpression);
+                    if (isNaN(result) || !isFinite(result)) {
+                        return null;
+                    }
+                    
+                    return parseFloat(result.toFixed(2));
+                } catch (error) {
+                    return null;
+                }
+            }
+            
+            // Fungsi untuk menghitung kembalian - LOGIKA BARU
+            function calculateChange(subtractionAmount = 0) {
+                if (totalResult > 0) {
+                    // Kembalian = Total - Jumlah yang dikurangi
+                    changeResult = totalResult - subtractionAmount;
+                    updateChangeDisplay();
+                } else {
+                    changeResult = 0;
+                    updateChangeDisplay();
+                }
+            }
+            
+            function updateChangeDisplay() {
+                changeDisplay.textContent = formatNumber(changeResult);
+                
+                // Warna berbeda untuk negatif/positif
+                if (changeResult < 0) {
+                    changeDisplay.style.color = '#e74c3c'; // Merah untuk negatif
+                } else if (changeResult > 0) {
+                    changeDisplay.style.color = '#27ae60'; // Hijau untuk positif
+                } else {
+                    changeDisplay.style.color = '#155724'; // Default
+                }
+            }
+            
+            // Buat baris input baru dengan nomor urut
+            function createNewInputLine() {
+                // Hapus class active dari baris sebelumnya
+                if (currentLineElement) {
+                    currentLineElement.classList.remove('active-input-line');
+                    currentLineElement.classList.add('history-line');
+                }
+                
+                // Buat baris baru dengan nomor urut
+                currentLineElement = document.createElement('div');
+                currentLineElement.className = 'history-line active-input-line';
+                currentLineElement.innerHTML = `
+                    <span class="line-number">${lineNumberCounter}</span>
+                    <span class="line-content">0</span>
+                    <span class="line-result"></span>
+                `;
+                
+                // Tambahkan ke history
+                historyElement.appendChild(currentLineElement);
+                
+                // Reset current line
+                currentLine = '';
+                
+                // Auto scroll ke baris aktif
+                setTimeout(() => {
+                    currentLineElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+                
+                return currentLineElement;
+            }
+            
+            function addNewLine() {
+                if (currentLine.trim() === '' || currentLine === '0') return;
+                
+                const result = calculateExpression(currentLine);
+                const lineData = {
+                    lineNumber: lineNumberCounter,
+                    content: currentLine,
+                    result: result
+                };
+                
+                historyLines.push(lineData);
+                
+                // Increment nomor urut untuk baris berikutnya
+                lineNumberCounter++;
+                
+                // Ubah baris aktif menjadi baris history biasa
+                currentLineElement.classList.remove('active-input-line');
+                
+                // Update konten baris dengan hasil
+                const contentSpan = currentLineElement.querySelector('.line-content');
+                const resultSpan = currentLineElement.querySelector('.line-result');
+                
+                contentSpan.textContent = currentLine;
+                resultSpan.textContent = result !== null ? formatNumber(result) : '';
+                resultSpan.style.color = '#2e7d32';
+                
+                updateTotal();
+                
+                // Buat baris input baru
+                createNewInputLine();
+            }
+            
+            function updateTotal() {
+                totalResult = 0;
+                historyLines.forEach(line => {
+                    if (line.result !== null) {
+                        totalResult += line.result;
+                    }
+                });
+                totalDisplay.textContent = `${formatNumber(totalResult)}`;
+                mirrorTotal.textContent = `Total: ${formatNumber(totalResult)}`;
+                
+                // Hitung kembalian setiap kali total berubah
+                if (lastSubtractionAmount > 0) {
+                    calculateChange(lastSubtractionAmount);
+                } else {
+                    changeResult = 0;
+                    updateChangeDisplay();
+                }
+            }
+            
+            function inputToCurrentLine(input) {
+                if (!currentLineElement) {
+                    createNewInputLine();
+                }
+                
+                const contentSpan = currentLineElement.querySelector('.line-content');
+                const resultSpan = currentLineElement.querySelector('.line-result');
+                
+                if (isMinusMode) {
+                    // Mode khusus: masukkan angka untuk dikurangi dari total
+                    if (contentSpan.textContent === '0' || currentLine === '') {
+                        currentLine = input;
+                    } else {
+                        currentLine += input;
+                    }
+                    contentSpan.textContent = currentLine;
+                    
+                    // Parse angka yang dimasukkan
+                    const subtractionAmount = parseFloat(currentLine.replace(',', '.'));
+                    if (!isNaN(subtractionAmount)) {
+                        lastSubtractionAmount = subtractionAmount;
+                        calculateChange(subtractionAmount);
+                    }
+                    
+                    // Tampilkan preview hasil
+                    const result = calculateExpression(currentLine);
+                    if (result !== null) {
+                        resultSpan.textContent = formatNumber(result);
+                        resultSpan.style.color = '#2e7d32';
+                    } else {
+                        resultSpan.textContent = '';
+                    }
+                } else {
+                    // Mode normal: tambahkan ke current line
+                    if (contentSpan.textContent === '0' || currentLine === '') {
+                        currentLine = input;
+                    } else {
+                        currentLine += input;
+                    }
+                    contentSpan.textContent = currentLine;
+                    
+                    // Tampilkan preview hasil
+                    const result = calculateExpression(currentLine);
+                    if (result !== null) {
+                        resultSpan.textContent = formatNumber(result);
+                        resultSpan.style.color = '#2e7d32';
+                    } else {
+                        resultSpan.textContent = '';
+                    }
+                }
+            }
+            
+            // FUNGSI BARU: Fungsi untuk operator matematika (×, ÷, -)
+            function handleOperator(operator) {
+                // Jangan izinkan operator jika dalam mode minus khusus
+                if (isMinusMode) {
+                    return;
+                }
+                
+                if (!currentLineElement) {
+                    createNewInputLine();
+                }
+                
+                const contentSpan = currentLineElement.querySelector('.line-content');
+                
+                if (contentSpan.textContent !== '0' && currentLine !== '') {
+                    let operatorSymbol;
+                    
+                    if (operator === 'multiply') {
+                        operatorSymbol = ' × ';
+                    } else if (operator === 'divide') {
+                        operatorSymbol = ' ÷ ';
+                    } else if (operator === 'subtract') {
+                        operatorSymbol = ' - ';
+                    }
+                    
+                    currentLine += operatorSymbol;
+                    contentSpan.textContent = currentLine;
+                    
+                    // Tampilkan preview hasil
+                    const resultSpan = currentLineElement.querySelector('.line-result');
+                    const result = calculateExpression(currentLine);
+                    if (result !== null) {
+                        resultSpan.textContent = formatNumber(result);
+                        resultSpan.style.color = '#2e7d32';
+                    } else {
+                        resultSpan.textContent = '';
+                    }
+                }
+            }
+            
+            // FUNGSI BARU: Tombol minus khusus untuk menghitung kembalian
+            function handleSubtractionMoney() {
+                if (totalResult > 0) {
+                    // Aktifkan mode minus
+                    isMinusMode = true;
+                    
+                    // Buat baris input baru
+                    createNewInputLine();
+                    
+                    const contentSpan = currentLineElement.querySelector('.line-content');
+                    const resultSpan = currentLineElement.querySelector('.line-result');
+                    
+                    // Kosongkan current line
+                    currentLine = '';
+                    contentSpan.textContent = '0';
+                    resultSpan.textContent = '';
+                    
+                    // Ganti style untuk mode minus
+                    currentLineElement.style.backgroundColor = '#ffebee';
+                    currentLineElement.style.borderColor = '#d32f2f';
+                    currentLineElement.style.color = '#d32f2f';
+                    
+                    // Reset last subtraction amount
+                    lastSubtractionAmount = 0;
+                    calculateChange(0);
+                } else {
+                    alert('Total masih 0. Masukkan data terlebih dahulu.');
+                }
+            }
+            
+            function inputDecimal() {
+                if (!currentLine.includes(',')) {
+                    if (!currentLineElement) {
+                        createNewInputLine();
+                    }
+                    
+                    const contentSpan = currentLineElement.querySelector('.line-content');
+                    const resultSpan = currentLineElement.querySelector('.line-result');
+                    
+                    if (currentLine === '' || currentLine === '0') {
+                        currentLine = '0,';
+                        contentSpan.textContent = currentLine;
+                    } else {
+                        currentLine += ',';
+                        contentSpan.textContent = currentLine;
+                    }
+                    
+                    // Tampilkan preview hasil
+                    const result = calculateExpression(currentLine);
+                    if (result !== null) {
+                        resultSpan.textContent = formatNumber(result);
+                        resultSpan.style.color = '#2e7d32';
+                    } else {
+                        resultSpan.textContent = '';
+                    }
+                }
+            }
+            
+            function resetData() {
+                if (confirm('Reset data saat ini? Data di history akan dihapus, tapi data tersimpan tetap aman.')) {
+                    historyLines = [];
+                    currentLine = '';
+                    totalResult = 0;
+                    changeResult = 0;
+                    lastSubtractionAmount = 0;
+                    isMinusMode = false;
+                    lineNumberCounter = 1; // Reset nomor urut
+                    
+                    // Hapus semua baris history
+                    historyElement.innerHTML = '';
+                    
+                    // Buat baris input baru
+                    createNewInputLine();
+                    
+                    updateTotal();
+                    updateChangeDisplay();
+                }
+            }
+            
+            // Fungsi Save dengan Auto Reset
+            function saveData() {
+                if (historyLines.length === 0) {
+                    alert('Tidak ada data untuk disimpan!');
+                    return;
+                }
+                
+                const savedData = loadSavedData();
+                const newItem = {
+                    id: Date.now(),
+                    lines: historyLines,
+                    total: totalResult,
+                    change: changeResult,
+                    lastSubtraction: lastSubtractionAmount,
+                    timestamp: new Date().toLocaleString('id-ID'),
+                    date: new Date().toISOString().split('T')[0]
+                };
+                
+                savedData.unshift(newItem);
+                localStorage.setItem('calcNoteData', JSON.stringify(savedData));
+                
+                // Auto reset setelah save
+                historyLines = [];
+                currentLine = '';
+                totalResult = 0;
+                changeResult = 0;
+                lastSubtractionAmount = 0;
+                isMinusMode = false;
+                lineNumberCounter = 1; // Reset nomor urut
+                
+                // Hapus semua baris history
+                historyElement.innerHTML = '';
+                
+                // Buat baris input baru
+                createNewInputLine();
+                
+                updateTotal();
+                updateChangeDisplay();
+                renderSavedData();
+                renderStats();
+                
+                // Tampilkan notifikasi singkat
+                showNotification('Data berhasil disimpan!');
+            }
+            
+            function showNotification(message) {
+                // Buat notifikasi sederhana
+                const notification = document.createElement('div');
+                notification.style.position = 'fixed';
+                notification.style.top = '20px';
+                notification.style.left = '50%';
+                notification.style.transform = 'translateX(-50%)';
+                notification.style.backgroundColor = '#4caf50';
+                notification.style.color = 'white';
+                notification.style.padding = '10px 20px';
+                notification.style.borderRadius = '5px';
+                notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                notification.style.zIndex = '1000';
+                notification.style.fontSize = '14px';
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                // Hapus notifikasi setelah 2 detik
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 2000);
+            }
+            
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                renderSavedData(this.value.toLowerCase());
+            });
+            
+            // Scroll functions untuk history
+            scrollUpBtn.addEventListener('click', () => {
+                historyElement.scrollBy({ top: -50, behavior: 'smooth' });
+            });
+            
+            scrollDownBtn.addEventListener('click', () => {
+                historyElement.scrollBy({ top: 50, behavior: 'smooth' });
+            });
+            
+            function loadSavedData() {
+                const saved = localStorage.getItem('calcNoteData');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return [];
+            }
+            
+            function renderSavedData(searchTerm = '') {
+                const savedData = loadSavedData();
+                savedDataElement.innerHTML = '';
+                
+                if (savedData.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'data-item';
+                    emptyMsg.innerHTML = '<div class="data-item-content" style="text-align: center; padding: 20px;">Belum ada data tersimpan</div>';
+                    savedDataElement.appendChild(emptyMsg);
+                    return;
+                }
+                
+                const filteredData = searchTerm ? 
+                    savedData.filter(session => 
+                        session.timestamp.toLowerCase().includes(searchTerm) ||
+                        session.lines.some(line => 
+                            line.content.toLowerCase().includes(searchTerm)
+                        )
+                    ) : savedData;
+                
+                if (filteredData.length === 0) {
+                    const noResult = document.createElement('div');
+                    noResult.className = 'data-item';
+                    noResult.innerHTML = '<div class="data-item-content" style="text-align: center; padding: 20px;">Tidak ditemukan data yang cocok</div>';
+                    savedDataElement.appendChild(noResult);
+                    return;
+                }
+                
+                filteredData.forEach((session) => {
+                    const sessionElement = document.createElement('div');
+                    sessionElement.className = 'data-item';
+                    
+                    // Format timestamp menjadi lebih singkat
+                    const shortTimestamp = session.timestamp.split(' ').slice(0, 3).join(' ');
+                    
+                    let sessionHTML = `
+                        <div class="data-item-header">
+                            <div>${shortTimestamp}</div>
+                            <div class="data-item-total">${formatNumber(session.total)}</div>
+                        </div>
+                    `;
+                    
+                    // Tampilkan juga data kembalian jika ada
+                    if (session.change !== undefined) {
+                        sessionHTML += `
+                            <div class="data-item-content">
+                                <span style="color: #666;">Kembalian: </span>
+                                <span style="color: ${session.change < 0 ? '#e74c3c' : session.change > 0 ? '#27ae60' : '#155724'}; font-weight: bold;">
+                                    ${formatNumber(session.change)}
+                                </span>
+                            </div>
+                        `;
+                    }
+                    
+                    // Tampilkan juga jumlah yang dibayar jika ada
+                    if (session.lastSubtraction !== undefined && session.lastSubtraction > 0) {
+                        sessionHTML += `
+                            <div class="data-item-content">
+                                <span style="color: #666;">Dibayar: </span>
+                                <span style="color: #2196f3; font-weight: bold;">
+                                    ${formatNumber(session.lastSubtraction)}
+                                </span>
+                            </div>
+                        `;
+                    }
+                    
+                    // Tampilkan hanya 2 baris pertama sebagai preview (dengan nomor urut)
+                    const previewLines = session.lines.slice(0, 2);
+                    previewLines.forEach(line => {
+                        sessionHTML += `
+                            <div class="data-item-content">
+                                ${line.lineNumber}. ${line.content} = ${line.result !== null ? formatNumber(line.result) : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    if (session.lines.length > 2) {
+                        sessionHTML += `
+                            <div class="data-item-content" style="color: #666; font-style: italic;">
+                                ...dan ${session.lines.length - 2} baris lainnya
+                            </div>
+                        `;
+                    }
+                    
+                    sessionHTML += `
+                        <div class="data-item-lines">
+                            ${session.lines.length} baris • Klik untuk load
+                        </div>
+                    `;
+                    
+                    sessionElement.innerHTML = sessionHTML;
+                    
+                    // Click handling untuk desktop
+                    sessionElement.addEventListener('click', () => {
+                        loadSession(session);
+                    });
+                    
+                    savedDataElement.appendChild(sessionElement);
+                });
+            }
+            
+            function loadSession(session) {
+                if (confirm('Load session ini? Data saat ini akan hilang.')) {
+                    historyLines = [...session.lines];
+                    totalResult = session.total;
+                    changeResult = session.change || 0;
+                    lastSubtractionAmount = session.lastSubtraction || 0;
+                    isMinusMode = false;
+                    
+                    // Cari nomor urut terbesar untuk melanjutkan
+                    if (historyLines.length > 0) {
+                        const maxLineNumber = Math.max(...historyLines.map(line => line.lineNumber || 0));
+                        lineNumberCounter = maxLineNumber + 1;
+                    } else {
+                        lineNumberCounter = 1;
+                    }
+                    
+                    // Hapus semua baris history
+                    historyElement.innerHTML = '';
+                    
+                    // Tambahkan kembali history lines (dengan nomor urut)
+                    historyLines.forEach(lineData => {
+                        const lineElement = document.createElement('div');
+                        lineElement.className = 'history-line';
+                        lineElement.innerHTML = `
+                            <span class="line-number">${lineData.lineNumber || ''}</span>
+                            <span class="line-content">${lineData.content}</span>
+                            <span class="line-result">${lineData.result !== null ? formatNumber(lineData.result) : ''}</span>
+                        `;
+                        
+                        historyElement.appendChild(lineElement);
+                    });
+                    
+                    // Buat baris input baru
+                    createNewInputLine();
+                    
+                    updateTotal();
+                    updateChangeDisplay();
+                    
+                    switchTab('calculator');
+                }
+            }
+            
+            function deleteSession(sessionId) {
+                const savedData = loadSavedData();
+                const newData = savedData.filter(session => session.id !== sessionId);
+                localStorage.setItem('calcNoteData', JSON.stringify(newData));
+                renderSavedData(searchInput.value);
+                renderStats();
+            }
+            
+            function renderStats() {
+                const savedData = loadSavedData();
+                statsGrid.innerHTML = '';
+                statsDataElement.innerHTML = '';
+                
+                if (savedData.length === 0) {
+                    statsGrid.innerHTML = '<div class="stat-item" style="grid-column: span 2;"><span class="stat-label">Belum ada data statistik</span></div>';
+                    return;
+                }
+                
+                // Calculate statistics
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                
+                let todayTotal = 0;
+                let yesterdayTotal = 0;
+                let weekTotal = 0;
+                let monthTotal = 0;
+                let allTimeTotal = 0;
+                let sessionCount = savedData.length;
+                
+                const todayData = [];
+                const yesterdayData = [];
+                const allData = [];
+                
+                savedData.forEach(session => {
+                    allTimeTotal += session.total;
+                    allData.push(session);
+                    
+                    const sessionDate = session.date || new Date(session.id).toISOString().split('T')[0];
+                    
+                    if (sessionDate === today) {
+                        todayTotal += session.total;
+                        todayData.push(session);
+                    }
+                    
+                    if (sessionDate === yesterday) {
+                        yesterdayTotal += session.total;
+                        yesterdayData.push(session);
+                    }
+                    
+                    // Week calculation (last 7 days)
+                    const sessionDateObj = new Date(sessionDate);
+                    const weekAgo = new Date(Date.now() - 7 * 86400000);
+                    if (sessionDateObj >= weekAgo) {
+                        weekTotal += session.total;
+                    }
+                    
+                    // Month calculation (last 30 days)
+                    const monthAgo = new Date(Date.now() - 30 * 86400000);
+                    if (sessionDateObj >= monthAgo) {
+                        monthTotal += session.total;
+                    }
+                });
+                
+                // Create stats grid
+                const stats = [
+                    { label: 'Hari Ini', value: todayTotal, data: todayData, date: today },
+                    { label: 'Kemarin', value: yesterdayTotal, data: yesterdayData, date: yesterday },
+                    { label: '7 Hari', value: weekTotal },
+                    { label: '30 Hari', value: monthTotal },
+                    { label: 'Total Semua', value: allTimeTotal, data: allData },
+                    { label: 'Jumlah Session', value: sessionCount }
+                ];
+                
+                stats.forEach(stat => {
+                    const statElement = document.createElement('div');
+                    statElement.className = 'stat-item';
+                    
+                    let statHTML = `
+                        <div class="stat-label">${stat.label}</div>
+                        <div class="stat-value">${formatNumber(stat.value)}</div>
+                    `;
+                    
+                    if (stat.date) {
+                        statHTML += `<div class="date-stat">${stat.date}</div>`;
+                    }
+                    
+                    if (stat.data && stat.data.length > 0) {
+                        statElement.style.cursor = 'pointer';
+                        statElement.addEventListener('click', () => {
+                            showStatsDetail(stat.label, stat.data);
+                        });
+                    }
+                    
+                    statElement.innerHTML = statHTML;
+                    statsGrid.appendChild(statElement);
+                });
+                
+                // Show all sessions in detail
+                showStatsDetail('Semua Data', allData);
+            }
+            
+            function showStatsDetail(title, data) {
+                statsDataElement.innerHTML = '';
+                
+                const titleElement = document.createElement('div');
+                titleElement.className = 'data-item';
+                titleElement.style.fontWeight = 'bold';
+                titleElement.style.fontSize = '14px';
+                titleElement.style.textAlign = 'center';
+                titleElement.style.marginBottom = '10px';
+                titleElement.textContent = `${title} (${data.length} session)`;
+                statsDataElement.appendChild(titleElement);
+                
+                if (data.length === 0) {
+                    const emptyElement = document.createElement('div');
+                    emptyElement.className = 'data-item';
+                    emptyElement.style.textAlign = 'center';
+                    emptyElement.style.padding = '20px';
+                    emptyElement.textContent = 'Tidak ada data';
+                    statsDataElement.appendChild(emptyElement);
+                    return;
+                }
+                
+                data.forEach(session => {
+                    const sessionElement = document.createElement('div');
+                    sessionElement.className = 'data-item';
+                    
+                    const sessionDate = session.date || new Date(session.id).toLocaleDateString('id-ID');
+                    const shortTimestamp = session.timestamp.split(' ').slice(0, 3).join(' ');
+                    
+                    sessionElement.innerHTML = `
+                        <div class="data-item-header">
+                            <div>${sessionDate}</div>
+                            <div class="data-item-total">${formatNumber(session.total)}</div>
+                        </div>
+                        <div class="data-item-content">
+                            ${shortTimestamp}
+                        </div>
+                        ${session.change !== undefined ? `
+                        <div class="data-item-content">
+                            <span style="color: #666;">Kembalian: </span>
+                            <span style="color: ${session.change < 0 ? '#e74c3c' : session.change > 0 ? '#27ae60' : '#155724'}; font-weight: bold;">
+                                ${formatNumber(session.change)}
+                            </span>
+                        </div>
+                        ` : ''}
+                        ${session.lastSubtraction !== undefined && session.lastSubtraction > 0 ? `
+                        <div class="data-item-content">
+                            <span style="color: #666;">Dibayar: </span>
+                            <span style="color: #2196f3; font-weight: bold;">
+                                ${formatNumber(session.lastSubtraction)}
+                            </span>
+                        </div>
+                        ` : ''}
+                        <div class="data-item-lines">
+                            ${session.lines.length} baris perhitungan
+                        </div>
+                    `;
+                    
+                    statsDataElement.appendChild(sessionElement);
+                });
+            }
+            
+            function clearAllData() {
+                if (confirm('Apakah Anda yakin ingin menghapus semua data tersimpan?')) {
+                    localStorage.removeItem('calcNoteData');
+                    renderSavedData();
+                    renderStats();
+                }
+            }
+            
+            function exportData() {
+                const savedData = loadSavedData();
+                if (savedData.length === 0) {
+                    alert('Tidak ada data untuk diexport');
+                    return;
+                }
+                
+                let csv = 'Nomor,Tanggal,Total,Kembalian,Dibayar,Baris,Timestamp\n';
+                savedData.forEach(session => {
+                    const date = session.date || new Date(session.id).toISOString().split('T')[0];
+                    const change = session.change || 0;
+                    const paid = session.lastSubtraction || 0;
+                    csv += `"${date}","${session.total}","${change}","${paid}","${session.lines.length}","${session.timestamp}"\n`;
+                    session.lines.forEach(line => {
+                        csv += `,"${line.lineNumber}. ${line.content}","${line.result !== null ? line.result : ''}",""\n`;
+                    });
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `calcnote_stats_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }
+            
+            function switchTab(tabName) {
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+                    tab.classList.add('hidden');
+                });
+                
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+                
+                if (tabName === 'data') {
+                    renderSavedData();
+                } else if (tabName === 'stats') {
+                    renderStats();
+                }
+            }
+            
+            function backspace() {
+                if (!currentLineElement) return;
+                
+                const contentSpan = currentLineElement.querySelector('.line-content');
+                const resultSpan = currentLineElement.querySelector('.line-result');
+                
+                if (currentLine.length > 1) {
+                    currentLine = currentLine.slice(0, -1);
+                    contentSpan.textContent = currentLine;
+                    
+                    // Update kembalian jika dalam mode minus
+                    if (isMinusMode) {
+                        const subtractionAmount = parseFloat(currentLine.replace(',', '.'));
+                        if (!isNaN(subtractionAmount)) {
+                            lastSubtractionAmount = subtractionAmount;
+                            calculateChange(subtractionAmount);
+                        } else {
+                            lastSubtractionAmount = 0;
+                            calculateChange(0);
+                        }
+                    }
+                    
+                    // Tampilkan preview hasil
+                    const result = calculateExpression(currentLine);
+                    if (result !== null) {
+                        resultSpan.textContent = formatNumber(result);
+                        resultSpan.style.color = '#2e7d32';
+                    } else {
+                        resultSpan.textContent = '';
+                    }
+                } else {
+                    currentLine = '';
+                    contentSpan.textContent = '0';
+                    resultSpan.textContent = '';
+                    
+                    // Keluar dari mode minus jika aktif
+                    if (isMinusMode) {
+                        isMinusMode = false;
+                        currentLineElement.style.backgroundColor = '';
+                        currentLineElement.style.borderColor = '';
+                        currentLineElement.style.color = '';
+                    }
+                }
+            }
+            
+            function setupButtonListeners() {
+                // Setup untuk tombol angka
+                document.querySelectorAll('.key.number').forEach(button => {
+                    button.addEventListener('click', () => {
+                        inputToCurrentLine(button.getAttribute('data-number'));
+                    });
+                });
+                
+                // Setup untuk operator
+                document.querySelectorAll('.key.operator').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const action = button.getAttribute('data-action');
+                        
+                        if (action === 'multiply') {
+                            handleOperator('multiply');
+                        } else if (action === 'divide') {
+                            handleOperator('divide');
+                        } else if (action === 'subtract') {
+                            if (!isMinusMode) {
+                                handleOperator('subtract');
+                            }
+                        }
+                    });
+                });
+                
+                // Tombol minus khusus untuk kembalian
+                document.querySelector('.key[data-action="subtractMoney"]').addEventListener('click', handleSubtractionMoney);
+                
+                // Setup untuk tombol fungsi lainnya
+                document.querySelector('.key[data-action="enter"]').addEventListener('click', addNewLine);
+                document.querySelector('.key[data-action="backspace"]').addEventListener('click', backspace);
+                document.querySelector('.key[data-action="reset"]').addEventListener('click', resetData);
+                document.querySelector('.key[data-action="save"]').addEventListener('click', saveData);
+                document.querySelector('.key[data-action="decimal"]').addEventListener('click', inputDecimal);
+                document.querySelector('[data-action="clear-all"]').addEventListener('click', clearAllData);
+                document.querySelector('[data-action="export"]').addEventListener('click', exportData);
+                
+                // Setup untuk tab buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        switchTab(button.getAttribute('data-tab'));
+                    });
+                });
+            }
+            
+            // Inisialisasi
+            createNewInputLine(); // Buat baris input pertama dengan nomor urut 1
+            setupButtonListeners();
+            updateTotal();
+            updateChangeDisplay();
+            renderStats();
+        });
+    </script>
+</body>
+</html>
